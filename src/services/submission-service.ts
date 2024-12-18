@@ -1,20 +1,58 @@
+import CodeRunner from "@/containers/code-runner";
 import executionProducer from "@/producer/Execution-producer";
 import CodeExecutor from "@containers/code-executor";
-import { SubmissionStatus, TSubmissionJob } from "@utils/global-types";
+import { TRunConsumerJob, TSubmitConsumerJob } from "@utils/global-types";
 
-const handleExecution = async (data: TSubmissionJob) => {
+const handleExecution = async (data: TSubmitConsumerJob) => {
   try {
     // 1. Handle Code Execution
     const codeExecutor = new CodeExecutor(data.language, data.timeLimit);
     const response = await codeExecutor.execute(data.code, data.testcases);
-    console.log(response);
 
-    if (data.id) {
+    if (data.socketKey) {
       // 2. Add to Queue
       executionProducer({
+        type: data.type,
         ...response,
-        id: data.id,
+        socketKey: data.socketKey,
+        testcaseCount: data.testcases.length,
         timestamp: data.timestamp,
+        language: data.language,
+        problemId: data.problemId,
+        langId: data.langId,
+        problemSlug: data.problemSlug,
+        username: data.username,
+      });
+    }
+  } catch (error) {
+    console.log(error);
+  }
+};
+
+const handleRun = async (data: TRunConsumerJob) => {
+  try {
+    const codeExecutor = new CodeRunner(data.language, data.timeLimit);
+    // 1. Handle Code Execution
+    const response = await codeExecutor.execute(
+      data.code,
+      data.solutionCode,
+      data.testcases,
+    );
+    console.log(response);
+
+    if (data.socketKey) {
+      // 2. Add to Queue
+      executionProducer({
+        type: "run",
+        ...response,
+        socketKey: data.socketKey,
+        testcaseCount: data.testcases.length,
+        timestamp: data.timestamp,
+        language: data.language,
+        problemId: data.problemId,
+        langId: data.langId,
+        problemSlug: data.problemSlug,
+        username: data.username,
       });
     }
   } catch (error) {
@@ -24,6 +62,7 @@ const handleExecution = async (data: TSubmissionJob) => {
 
 const submissionService = {
   handleExecution,
+  handleRun,
 };
 
 export default submissionService;

@@ -1,8 +1,4 @@
-import {
-  ExecutionResponse,
-  SubmissionStatus,
-  Testcase,
-} from "@/utils/global-types";
+import { TSubmitResponse, Testcase } from "@/utils/global-types";
 import formatSingleQuote from "@/utils/format-single-quote";
 import Docker from "dockerode";
 import fetchDecodedStream from "./fetch-decoded-string";
@@ -14,14 +10,14 @@ export default async function executeCode(
   timeLimit: number,
 ) {
   let acceptedCount = 0;
-  let testCaseResult: ExecutionResponse = {
+  let testCaseResult: TSubmitResponse = {
     executionOutput: "No Testcases",
     status: "Accepted",
   };
   for (const { input, output } of testcases) {
     testCaseResult = await Promise.race([
       executeTestcase(container, input, output, executeCmd),
-      new Promise<ExecutionResponse>(resolve =>
+      new Promise<TSubmitResponse>(resolve =>
         setTimeout(
           () =>
             resolve({
@@ -50,7 +46,7 @@ async function executeTestcase(
   input: string,
   expectedOutput: string,
   executeCmd: string,
-): Promise<ExecutionResponse> {
+): Promise<TSubmitResponse> {
   const rawLogBuffer: Buffer[] = [];
   const formattedInput = formatSingleQuote(input);
 
@@ -84,7 +80,7 @@ async function executeTestcase(
       input: input,
       output: expectedOutput,
       executionOutput: codeResponse,
-      status: "Wrong Answer",
+      status: "WrongAnswer",
     };
   }
 }

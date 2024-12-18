@@ -1,4 +1,4 @@
-import { ExecutionResponse, Testcase } from "@/utils/global-types";
+import { TSubmitResponse, Testcase } from "@/utils/global-types";
 import {
   getCompileCmd,
   getDockerImage,
@@ -27,10 +27,7 @@ export default class CodeExecutor {
     this.timeLimit = getTimeLimit(language, baseTimeLimit);
   }
 
-  async execute(
-    code: string,
-    testcases: Testcase[],
-  ): Promise<ExecutionResponse> {
+  async execute(code: string, testcases: Testcase[]): Promise<TSubmitResponse> {
     console.log("Pulling Docker Image....");
     await pullDockerImage(this.docker, this.dockerImage);
 
@@ -47,7 +44,11 @@ export default class CodeExecutor {
       const compiledOutput = await compileCode(container, runCompileCmd);
 
       if (compiledOutput) {
-        return { executionOutput: compiledOutput, status: "Compiled Error" };
+        return {
+          acceptedCount: 0,
+          executionOutput: compiledOutput,
+          status: "CompiledError",
+        };
       }
       console.log("Compiled Successful");
 
@@ -59,7 +60,11 @@ export default class CodeExecutor {
         this.timeLimit,
       );
     } catch (error: any) {
-      return { executionOutput: "Internal Server Error", status: "Error" };
+      return {
+        acceptedCount: 0,
+        executionOutput: "Internal Server Error",
+        status: "Error",
+      };
     } finally {
       try {
         if (container) {
