@@ -38,7 +38,6 @@ const handleRun = async (data: TRunConsumerJob) => {
       data.solutionCode,
       data.testcases,
     );
-    console.log(response);
 
     if (data.socketKey) {
       // 2. Add to Queue

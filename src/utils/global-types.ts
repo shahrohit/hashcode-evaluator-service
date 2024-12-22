@@ -45,7 +45,8 @@ export type SubmissionStatus =
   | "WrongAnswer"
   | "Error"
   | "TLE"
-  | "RTE";
+  | "RTE"
+  | "Done";
 
 export type TSubmitResponse = {
   input?: string;

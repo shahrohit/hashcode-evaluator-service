@@ -28,19 +28,16 @@ export default class CodeExecutor {
   }
 
   async execute(code: string, testcases: Testcase[]): Promise<TSubmitResponse> {
-    console.log("Pulling Docker Image....");
     await pullDockerImage(this.docker, this.dockerImage);
 
     let container: Docker.Container | null = null;
 
     try {
-      console.log("Initilizing docker container...");
       container = await createContainer(this.docker, this.dockerImage);
       await container.start();
 
       const formattedCode = formatSingleQuote(code);
       const runCompileCmd = `echo '${formattedCode}' > ${this.compileCmd}`;
-      console.log("Compiling code....");
       const compiledOutput = await compileCode(container, runCompileCmd);
 
       if (compiledOutput) {
@@ -50,16 +47,14 @@ export default class CodeExecutor {
           status: "CompiledError",
         };
       }
-      console.log("Compiled Successful");
 
-      console.log("Evaluating Testcases...");
       return await executeCode(
         container,
         testcases,
         this.executeCmd,
         this.timeLimit,
       );
-    } catch (error: any) {
+    } catch {
       return {
         acceptedCount: 0,
         executionOutput: "Internal Server Error",
@@ -69,9 +64,8 @@ export default class CodeExecutor {
       try {
         if (container) {
           await container.remove({ force: true });
-          console.log("Cleaned up container.");
         }
-      } catch (cleanupError) {
+      } catch {
         container?.kill();
       }
     }

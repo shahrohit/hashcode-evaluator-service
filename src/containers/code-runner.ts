@@ -10,7 +10,6 @@ import pullDockerImage from "@containers/pull-image";
 import createContainer from "./create-docker-container";
 import formatSingleQuote from "@/utils/format-single-quote";
 import compileCode from "./compile-code";
-import executeCode from "./execute-code";
 import runCode from "./run-code";
 
 export default class CodeRunner {
@@ -33,19 +32,16 @@ export default class CodeRunner {
     solutionCode: string,
     testcases: string[],
   ): Promise<TRunResponse> {
-    console.log("Pulling Docker Image....");
     await pullDockerImage(this.docker, this.dockerImage);
 
     let container: Docker.Container | null = null;
 
     try {
-      console.log("Initilizing docker container...");
       container = await createContainer(this.docker, this.dockerImage);
       await container.start();
 
       let formattedCode = formatSingleQuote(code);
       let runCompileCmd = `echo '${formattedCode}' > ${this.compileCmd}`;
-      console.log("Compiling code....");
       let compiledOutput = await compileCode(container, runCompileCmd);
 
       if (compiledOutput) {
@@ -55,9 +51,7 @@ export default class CodeRunner {
           data: [],
         };
       }
-      console.log("Compiled Successful");
 
-      console.log("Evaluating Testcases...");
       const codeResponse = await runCode(
         container,
         testcases,
@@ -67,7 +61,6 @@ export default class CodeRunner {
 
       formattedCode = formatSingleQuote(solutionCode);
       runCompileCmd = `echo '${formattedCode}' > ${this.compileCmd}`;
-      console.log("Compiling sol code....");
       compiledOutput = await compileCode(container, runCompileCmd);
 
       if (compiledOutput) {
@@ -77,9 +70,7 @@ export default class CodeRunner {
           data: [],
         };
       }
-      console.log("Compiled Successful");
 
-      console.log("Evaluating Testcases...");
       const solutionCodeResponse = await runCode(
         container,
         testcases,
@@ -87,7 +78,12 @@ export default class CodeRunner {
         this.timeLimit,
       );
 
-      const result: any[] = [];
+      const result: {
+        input: string;
+        output: string;
+        executionOutput: string;
+        status: SubmissionStatus;
+      }[] = [];
 
       let overallStatus: SubmissionStatus = "Accepted";
       testcases.forEach((testcase, i) => {
@@ -106,20 +102,19 @@ export default class CodeRunner {
           input: testcase,
           executionOutput: codeResponse[i].output,
           output: solutionCodeResponse[i].output,
-          status,
+          status: status as SubmissionStatus,
         });
       });
 
       return { status: overallStatus, error: null, data: result };
-    } catch (error: any) {
+    } catch {
       return { data: [], error: "Internal Server Error", status: "Error" };
     } finally {
       try {
         if (container) {
           await container.remove({ force: true });
-          console.log("Cleaned up container.");
         }
-      } catch (cleanupError) {
+      } catch {
         container?.kill();
       }
     }

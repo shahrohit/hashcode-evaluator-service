@@ -13,7 +13,6 @@ export default async function pullDockerImage(
           if (error) return reject(error);
           docker.modem.followProgress(stream, err => {
             if (err) return reject(err);
-            console.log(`Image ${dockerImage} pulled successfully.`);
             resolve();
           });
         },
